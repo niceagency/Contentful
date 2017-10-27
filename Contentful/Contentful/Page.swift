@@ -9,10 +9,14 @@
 import Foundation
 
 public struct Page {
-    
+   
     public let itemsPerPage: Int
     public let currentPage: Int
     public let totalItemsAvailable: Int?
+    
+    public init( itemsPerPage: Int, currentPage: Int, totalItemsAvailable: Int?) {
+        self.init(itemsPerPage: itemsPerPage, currentPage: currentPage, totalItemsAvailable: totalItemsAvailable)
+    }
     
     public func getNextPage() -> Page? {
         
