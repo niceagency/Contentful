@@ -15,7 +15,7 @@ private typealias BoolDict = [String:Bool]
 private typealias RefDict = [String: [String:StringDict]]
 
 
-public struct Contentful {
+public struct NContentful {
     
     //MARK: prepare data request
     

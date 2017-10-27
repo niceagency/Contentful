@@ -49,8 +49,8 @@ public enum Result<T> {
 }
 
 public struct SysData {
-    let id: String
-    let version: Int
+    public let id: String
+    public let version: Int
 }
 
 public struct PagedResult<T> {
