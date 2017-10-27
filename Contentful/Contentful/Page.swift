@@ -15,7 +15,9 @@ public struct Page {
     public let totalItemsAvailable: Int?
     
     public init( itemsPerPage: Int, currentPage: Int, totalItemsAvailable: Int?) {
-        self.init(itemsPerPage: itemsPerPage, currentPage: currentPage, totalItemsAvailable: totalItemsAvailable)
+        self.itemsPerPage = itemsPerPage
+        self.currentPage = currentPage
+        self.totalItemsAvailable = totalItemsAvailable
     }
     
     public func getNextPage() -> Page? {
