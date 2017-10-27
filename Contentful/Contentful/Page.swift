@@ -10,9 +10,9 @@ import Foundation
 
 public struct Page {
     
-    private let itemsPerPage: Int
-    private let currentPage: Int
-    private let totalItemsAvailable: Int?
+    public let itemsPerPage: Int
+    public let currentPage: Int
+    public let totalItemsAvailable: Int?
     
     public func getNextPage() -> Page? {
         
