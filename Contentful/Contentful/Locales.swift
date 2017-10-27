@@ -510,10 +510,10 @@ public enum LocaleCode: String {
 
 public struct Locale {
     
-    let favouredLocale: LocaleCode
-    let fallbackLocale: LocaleCode
+    public let favouredLocale: LocaleCode
+    public let fallbackLocale: LocaleCode
 
-    init (locale: LocaleCode, fallback: LocaleCode? = nil) {
+    public init (locale: LocaleCode, fallback: LocaleCode? = nil) {
         favouredLocale = locale
         if let fallback = fallback {
             fallbackLocale = fallback
