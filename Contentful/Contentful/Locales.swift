@@ -513,12 +513,12 @@ public struct Locale {
     public let favouredLocale: LocaleCode
     public let fallbackLocale: LocaleCode
 
-    public init (locale: LocaleCode, fallback: LocaleCode? = nil) {
-        favouredLocale = locale
-        if let fallback = fallback {
-            fallbackLocale = fallback
+    public init (favouredLocale: LocaleCode, fallbackLocale: LocaleCode? = nil) {
+        self.favouredLocale = favouredLocale
+        if let fallback = fallbackLocale {
+            self.fallbackLocale = fallback
         } else {
-            fallbackLocale = LocaleCode.englishUnitedKingdom
+            self.fallbackLocale = LocaleCode.englishUnitedKingdom
         }
     }
 }
