@@ -10,11 +10,11 @@ import Foundation
 
 public struct Page {
     
-    let itemsPerPage: Int
-    let currentPage: Int
-    let totalItemsAvailable: Int?
+    private let itemsPerPage: Int
+    private let currentPage: Int
+    private let totalItemsAvailable: Int?
     
-    func getNextPage() -> Page? {
+    public func getNextPage() -> Page? {
         
         if isNextPageAvailable() {
             return Page(itemsPerPage: self.itemsPerPage, currentPage: currentPage + 1, totalItemsAvailable: totalItemsAvailable)
@@ -22,7 +22,7 @@ public struct Page {
         return nil
     }
     
-    func getPrevPage() -> Page? {
+    public func getPrevPage() -> Page? {
         
         if isPrevPageAvailable() {
             return Page(itemsPerPage: self.itemsPerPage, currentPage: currentPage - 1, totalItemsAvailable: totalItemsAvailable)
@@ -30,11 +30,11 @@ public struct Page {
         return nil
     }
     
-   static func getFirstPage(itemsPerPage: Int) -> Page {
+   public static func getFirstPage(itemsPerPage: Int) -> Page {
         return Page(itemsPerPage: itemsPerPage, currentPage: 0, totalItemsAvailable: nil)
     }
     
-    func isNextPageAvailable() -> Bool {
+    public func isNextPageAvailable() -> Bool {
         guard let total  = totalItemsAvailable else { return false }
         
         if (currentPage + 1) * itemsPerPage < total {
@@ -43,7 +43,7 @@ public struct Page {
         return false
     }
     
-    func isPrevPageAvailable() -> Bool {
+    public func isPrevPageAvailable() -> Bool {
         
         if (currentPage - 1) >= 0 {
             return true
