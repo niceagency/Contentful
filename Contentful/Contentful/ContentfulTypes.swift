@@ -54,8 +54,8 @@ public struct SysData {
 }
 
 public struct PagedResult<T> {
-    let results: [T]
-    let page: Page
+    public let results: [T]
+    public let page: Page
 }
 
 public enum UnboxedType {
