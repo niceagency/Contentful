@@ -15,9 +15,7 @@ private typealias BoolDict = [String:Bool]
 private typealias RefDict = [String: [String:StringDict]]
 
 
-public struct NContentful {
-    
-    //MARK: prepare data request
+public struct PageRequest {
     
     public static func prepareRequest(forContent contentType: String, fromSpace spaceId: String,  page: Page) -> (endpoint: String, query: [URLQueryItem]) {
         let endpoint = "/spaces/\(spaceId)/entries"
@@ -30,9 +28,10 @@ public struct NContentful {
         
         return (endpoint, queries)
     }
+}
     
-    //MARK: decode response
-    
+public struct PageUnboxing {
+
     public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping ((String) -> UnboxedType?), via creator: @escaping ((UnboxedFields) -> T?)) -> Result<PagedResult<T>>  {
         let decoder = JSONDecoder()
         
@@ -60,8 +59,9 @@ public struct NContentful {
             }
         }
     }
-    
-    //MARK: encoding to Contentful JSON Data
+}
+
+public struct ObjectEncoding {
     
     public static func encode<T: Encodable>(object: T, locale: LocaleCode) -> (data: Data, sysData: SysData)? {
         
