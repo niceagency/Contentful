@@ -12,7 +12,7 @@ public typealias UnboxedFields = [String:Any]
 
 public protocol Readable {
     static func contentfulEntryType() -> String
-    static func unboxer(ofField field: String) -> UnboxedType?
+    static func unboxer(ofField field: String) -> (UnboxedType,Bool)?
     static func creator(withFields fields: UnboxedFields) -> Self
 }
 
@@ -28,7 +28,6 @@ public enum DecodingError: Error {
     case requiredKeyMissing(CodingKey)
     case fieldFormatError
     case invalidData
-   
     
     public func errorMessage() -> String {
         switch self {
@@ -40,7 +39,6 @@ public enum DecodingError: Error {
             return ("field format error")
         case .invalidData:
             return ("data corrupt")
-        
         }
     }
 }
