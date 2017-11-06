@@ -32,7 +32,7 @@ public struct PageRequest {
     
 public struct PageUnboxing {
 
-    public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping ((String) -> (UnboxedType, Bool)?), via creator: @escaping ((UnboxedFields) -> T?)) -> Result<PagedResult<T>>  {
+    public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping ((String) -> (UnboxedType,Bool)?), via creator: @escaping ((UnboxedFields) -> T?)) -> Result<PagedResult<T>>  {
         let decoder = JSONDecoder()
         
         decoder.userInfo = [CodingUserInfoKey(rawValue: "fieldUnboxer")!: fieldUnboxer, CodingUserInfoKey(rawValue: "creator")!: creator]
@@ -150,7 +150,7 @@ private struct Unboxable<T>: Decodable {
     let object: T?
     
     init(from decoder: Decoder) throws {
-        let unboxing = decoder.userInfo[CodingUserInfoKey(rawValue: "fieldUnboxer")!] as! ((String) -> (UnboxedType, Bool))
+        let unboxing = decoder.userInfo[CodingUserInfoKey(rawValue: "fieldUnboxer")!] as! ((String) -> (UnboxedType,Bool)?)
         let creator = decoder.userInfo[CodingUserInfoKey(rawValue: "creator")!] as! ((UnboxedFields) -> T?)
         
         let fields = try Unboxable.unboxableFields(fromDecoder: decoder, withUnboxing: unboxing)
@@ -159,7 +159,7 @@ private struct Unboxable<T>: Decodable {
     }
     
   
-    static func unboxableFields(fromDecoder decoder: Decoder, withUnboxing unboxing: ((String) -> (UnboxedType, Bool)?)) throws -> UnboxedFields {
+    static func unboxableFields(fromDecoder decoder: Decoder, withUnboxing unboxing: ((String) -> (UnboxedType,Bool)?)) throws -> UnboxedFields {
        
         func getValueFromDict<T>(dict: [String:T], locale: Locale?) -> T? {
             if let locale = locale {
@@ -181,10 +181,6 @@ private struct Unboxable<T>: Decodable {
         let locale = decoder.userInfo[CodingUserInfoKey(rawValue: "locale")!] as? Locale
         
         let fields = try container.nestedContainer(keyedBy: GenericCodingKeys.self, forKey: .fields)
-     
-        
-        
-        
         
         for key in fields.allKeys {
             let field = key.stringValue
@@ -195,33 +191,27 @@ private struct Unboxable<T>: Decodable {
                     case .string:
                         let stringDict = try fields.decode(StringDict.self, forKey: key)
                         unboxedFields[field] = getValueFromDict(dict: stringDict, locale: locale)
-                      
                     case .int:
                         let intDict = try fields.decode(IntDict.self, forKey: key)
                         unboxedFields[field] = getValueFromDict(dict: intDict, locale: locale)
-                      
                     case .bool:
                         let boolDict = try fields.decode(BoolDict.self, forKey: key)
                        unboxedFields[field] = getValueFromDict(dict: boolDict, locale: locale)
-                     
                     case .decimal:
                         let doubleDict = try fields.decode(DoubleDict.self, forKey: key)
                         unboxedFields[field] = getValueFromDict(dict: doubleDict, locale: locale)
-                        
                     case .date:
                         let stringDict = try fields.decode(StringDict.self, forKey: key)
                         let dateString = getValueFromDict(dict: stringDict, locale: locale)
                         let formatter = ISO8601DateFormatter()
                         guard let ds = dateString, let date = formatter.date(from: ds) else { throw DecodingError.fieldFormatError }
                         unboxedFields[field] = date
-                      
                     case .reference:
                         let refDict = try fields.decode(RefDict.self, forKey: key)
                         guard let sysDict  = getValueFromDict(dict: refDict, locale: locale),
                             let idDict = sysDict["sys"],
                             let id = idDict["id"] else { throw DecodingError.invalidData }
                         unboxedFields[field] = id
-                        
                     }
                     
                     if required && unboxedFields[field] == nil {
@@ -231,8 +221,6 @@ private struct Unboxable<T>: Decodable {
                 } catch {
                     throw DecodingError.typeMismatch(String.self)
                 }
-                
-                
             }
         }
         return unboxedFields
