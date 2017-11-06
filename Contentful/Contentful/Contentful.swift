@@ -187,6 +187,9 @@ private struct Unboxable<T>: Decodable {
          
             if let (type, required) = unboxing(field) {
                 do {
+                    
+                    print ("debug: decoding field: \(field) as \(type) required \(required)")
+                    
                     switch type {
                     case .string:
                         let stringDict = try fields.decode(StringDict.self, forKey: key)
@@ -212,13 +215,17 @@ private struct Unboxable<T>: Decodable {
                             let idDict = sysDict["sys"],
                             let id = idDict["id"] else { throw DecodingError.invalidData }
                         unboxedFields[field] = id
+
                     }
                     
                     if required && unboxedFields[field] == nil {
+                        
+                        print("debug: field \(field) is required and not set so should throw here")
                         throw DecodingError.requiredKeyMissing(key)
                     }
                     
                 } catch {
+      
                     throw DecodingError.typeMismatch(String.self)
                 }
             }
