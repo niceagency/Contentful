@@ -184,6 +184,10 @@ private struct Unboxable<T>: Decodable {
         
         let fieldMapping = unboxing()
         
+        let requiredFields = fieldMapping.filter{ $0.value.1 == true }
+        let requiredKeys  = Set(requiredFields.keys)
+        let fieldsReturned = Set(fields.allKeys.map { $0.stringValue })
+        guard requiredKeys.isSubset(of: fieldsReturned) else { throw DecodingError.missingRequiredFields(Array( requiredKeys.subtracting(fieldsReturned)))}
         
         for key in fields.allKeys {
             let field = key.stringValue
