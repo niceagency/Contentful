@@ -28,6 +28,7 @@ public enum DecodingError: Error {
     case requiredKeyMissing(CodingKey)
     case fieldFormatError
     case invalidData
+   
     
     public func errorMessage() -> String {
         switch self {
@@ -39,6 +40,7 @@ public enum DecodingError: Error {
             return ("field format error")
         case .invalidData:
             return ("data corrupt")
+        
         }
     }
 }
