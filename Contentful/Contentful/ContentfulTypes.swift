@@ -9,10 +9,11 @@
 import Foundation
 
 public typealias UnboxedFields = [String:Any]
+public typealias FieldMapping = [String:(UnboxedType,Bool)]
 
 public protocol Readable {
     static func contentfulEntryType() -> String
-    static func unboxer(ofField field: String) -> (UnboxedType,Bool)?
+    static func unboxer(ofField field: String) -> (FieldMapping)
     static func creator(withFields fields: UnboxedFields) -> Self
 }
 

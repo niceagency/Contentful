@@ -32,7 +32,7 @@ public struct PageRequest {
     
 public struct PageUnboxing {
 
-    public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping ((String) -> (UnboxedType,Bool)?), via creator: @escaping ((UnboxedFields) -> T?)) -> Result<PagedResult<T>>  {
+    public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T?)) -> Result<PagedResult<T>>  {
         let decoder = JSONDecoder()
         
         decoder.userInfo = [CodingUserInfoKey(rawValue: "fieldUnboxer")!: fieldUnboxer, CodingUserInfoKey(rawValue: "creator")!: creator]
@@ -150,7 +150,7 @@ private struct Unboxable<T>: Decodable {
     let object: T?
     
     init(from decoder: Decoder) throws {
-        let unboxing = decoder.userInfo[CodingUserInfoKey(rawValue: "fieldUnboxer")!] as! ((String) -> (UnboxedType,Bool)?)
+        let unboxing = decoder.userInfo[CodingUserInfoKey(rawValue: "fieldUnboxer")!] as! (() -> FieldMapping )
         let creator = decoder.userInfo[CodingUserInfoKey(rawValue: "creator")!] as! ((UnboxedFields) -> T?)
         
         let fields = try Unboxable.unboxableFields(fromDecoder: decoder, withUnboxing: unboxing)
@@ -159,7 +159,7 @@ private struct Unboxable<T>: Decodable {
     }
     
   
-    static func unboxableFields(fromDecoder decoder: Decoder, withUnboxing unboxing: ((String) -> (UnboxedType,Bool)?)) throws -> UnboxedFields {
+    static func unboxableFields(fromDecoder decoder: Decoder, withUnboxing unboxing: (() -> FieldMapping)) throws -> UnboxedFields {
        
         func getValueFromDict<T>(dict: [String:T], locale: Locale?) -> T? {
             if let locale = locale {
@@ -182,10 +182,15 @@ private struct Unboxable<T>: Decodable {
         
         let fields = try container.nestedContainer(keyedBy: GenericCodingKeys.self, forKey: .fields)
         
+        let fieldMapping = unboxing()
+        
+        
         for key in fields.allKeys {
             let field = key.stringValue
          
-            if let (type, required) = unboxing(field) {
+          
+            
+            if let (type, required) = fieldMapping[field] {
                 do {
                     
                     print ("debug: decoding field: \(field) as \(type) required \(required)")
@@ -218,7 +223,7 @@ private struct Unboxable<T>: Decodable {
 
                     }
                     
-                    print ("field: \(field) required: \(required), set \(unboxedFields[field])" )
+                    print ("field: \(field) required: \(required), value: \(unboxedFields[field] ?? "not set")" )
                     
                     if required && unboxedFields[field] == nil {
                         
