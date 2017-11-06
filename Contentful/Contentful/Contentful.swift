@@ -29,9 +29,9 @@ public struct PageRequest {
         return (endpoint, queries)
     }
 }
-    
-public struct PageUnboxing {
 
+public struct PageUnboxing {
+    
     public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T?)) -> Result<PagedResult<T>>  {
         let decoder = JSONDecoder()
         
@@ -158,9 +158,9 @@ private struct Unboxable<T>: Decodable {
         object = creator(fields)
     }
     
-  
+    
     static func unboxableFields(fromDecoder decoder: Decoder, withUnboxing unboxing: (() -> FieldMapping)) throws -> UnboxedFields {
-       
+        
         func getValueFromDict<T>(dict: [String:T], locale: Locale?) -> T? {
             if let locale = locale {
                 return dict[locale.favouredLocale.rawValue] ?? dict[locale.fallbackLocale.rawValue]
@@ -183,16 +183,22 @@ private struct Unboxable<T>: Decodable {
         let fields = try container.nestedContainer(keyedBy: GenericCodingKeys.self, forKey: .fields)
         
         let fieldMapping = unboxing()
-        
         let requiredFields = fieldMapping.filter{ $0.value.1 == true }
         let requiredKeys  = Set(requiredFields.keys)
+        
+        print ("required keys: \(requiredKeys)")
+        
+        
         let fieldsReturned = Set(fields.allKeys.map { $0.stringValue })
-        guard requiredKeys.isSubset(of: fieldsReturned) else { throw DecodingError.missingRequiredFields(Array( requiredKeys.subtracting(fieldsReturned)))}
+        
+        print ("fieldsReturned: \(fieldsReturned)")
+        
+        print ("is subset: \(requiredKeys.isSubset(of: fieldsReturned))")
+        
+        guard requiredKeys.isSubset(of: fieldsReturned) else { throw DecodingError.missingRequiredFields(Array(requiredKeys.subtracting(fieldsReturned)))}
         
         for key in fields.allKeys {
             let field = key.stringValue
-         
-          
             
             if let (type, required) = fieldMapping[field] {
                 do {
@@ -208,7 +214,7 @@ private struct Unboxable<T>: Decodable {
                         unboxedFields[field] = getValueFromDict(dict: intDict, locale: locale)
                     case .bool:
                         let boolDict = try fields.decode(BoolDict.self, forKey: key)
-                       unboxedFields[field] = getValueFromDict(dict: boolDict, locale: locale)
+                        unboxedFields[field] = getValueFromDict(dict: boolDict, locale: locale)
                     case .decimal:
                         let doubleDict = try fields.decode(DoubleDict.self, forKey: key)
                         unboxedFields[field] = getValueFromDict(dict: doubleDict, locale: locale)
@@ -224,7 +230,7 @@ private struct Unboxable<T>: Decodable {
                             let idDict = sysDict["sys"],
                             let id = idDict["id"] else { throw DecodingError.invalidData }
                         unboxedFields[field] = id
-
+                        
                     }
                     
                     print ("field: \(field) required: \(required), value: \(unboxedFields[field] ?? "not set")" )
@@ -236,7 +242,6 @@ private struct Unboxable<T>: Decodable {
                     }
                     
                 } catch {
-      
                     throw DecodingError.typeMismatch(String.self)
                 }
             }
