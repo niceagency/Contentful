@@ -218,6 +218,8 @@ private struct Unboxable<T>: Decodable {
 
                     }
                     
+                    print ("field: \(field) required: \(required), set \(unboxedFields[field])" )
+                    
                     if required && unboxedFields[field] == nil {
                         
                         print("debug: field \(field) is required and not set so should throw here")
