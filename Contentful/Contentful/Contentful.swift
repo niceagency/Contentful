@@ -47,16 +47,7 @@ public struct PageUnboxing {
             let page = Page(itemsPerPage: response.limit, currentPage: response.skip/response.limit, totalItemsAvailable: response.total)
             return .success(PagedResult(results: entries, page: page))
         } catch {
-            switch error {
-            case Swift.DecodingError.dataCorrupted(_):
-                return .error(.invalidData)
-            case Swift.DecodingError.typeMismatch(let type, _):
-                return .error(.typeMismatch(type))
-            case Swift.DecodingError.keyNotFound(let key, _):
-                return .error(.requiredKeyMissing(key))
-            default:
-                return .error(.invalidData)
-            }
+            return .error(error as! ResultError)
         }
     }
 }
@@ -152,13 +143,15 @@ private struct Unboxable<T>: Decodable {
     init(from decoder: Decoder) throws {
         let unboxing = decoder.userInfo[CodingUserInfoKey(rawValue: "fieldUnboxer")!] as! (() -> FieldMapping )
         let creator = decoder.userInfo[CodingUserInfoKey(rawValue: "creator")!] as! ((UnboxedFields) -> T?)
-        
-        let fields = try Unboxable.unboxableFields(fromDecoder: decoder, withUnboxing: unboxing)
-        
-        object = creator(fields)
+        do {
+            let fields = try Unboxable.unboxableFields(fromDecoder: decoder, withUnboxing: unboxing)
+            object = creator(fields)
+        } catch DecodingError.missingRequiredFields(let fields) {
+            print ("failed to initialize object  - missing fields \(fields)")
+            object = nil
+        }
     }
-    
-    
+
     static func unboxableFields(fromDecoder decoder: Decoder, withUnboxing unboxing: (() -> FieldMapping)) throws -> UnboxedFields {
         
         func getValueFromDict<T>(dict: [String:T], locale: Locale?) -> T? {
@@ -179,32 +172,21 @@ private struct Unboxable<T>: Decodable {
         unboxedFields["version"] = try sys.decode(Int.self, forKey: .version)
         
         let locale = decoder.userInfo[CodingUserInfoKey(rawValue: "locale")!] as? Locale
-        
         let fields = try container.nestedContainer(keyedBy: GenericCodingKeys.self, forKey: .fields)
-        
         let fieldMapping = unboxing()
         let requiredFields = fieldMapping.filter{ $0.value.1 == true }
         let requiredKeys  = Set(requiredFields.keys)
-        
-        print ("required keys: \(requiredKeys)")
-        
-        
         let fieldsReturned = Set(fields.allKeys.map { $0.stringValue })
-        
-        print ("fieldsReturned: \(fieldsReturned)")
-        
-        print ("is subset: \(requiredKeys.isSubset(of: fieldsReturned))")
-        
-        guard requiredKeys.isSubset(of: fieldsReturned) else { throw DecodingError.missingRequiredFields(Array(requiredKeys.subtracting(fieldsReturned)))}
+  
+        guard requiredKeys.isSubset(of: fieldsReturned) else {
+            throw DecodingError.missingRequiredFields(Array(requiredKeys.subtracting(fieldsReturned)))
+        }
         
         for key in fields.allKeys {
             let field = key.stringValue
             
             if let (type, required) = fieldMapping[field] {
                 do {
-                    
-                    print ("debug: decoding field: \(field) as \(type) required \(required)")
-                    
                     switch type {
                     case .string:
                         let stringDict = try fields.decode(StringDict.self, forKey: key)
@@ -228,19 +210,14 @@ private struct Unboxable<T>: Decodable {
                         let refDict = try fields.decode(RefDict.self, forKey: key)
                         guard let sysDict  = getValueFromDict(dict: refDict, locale: locale),
                             let idDict = sysDict["sys"],
-                            let id = idDict["id"] else { throw DecodingError.invalidData }
+                            let id = idDict["id"] else {
+                                throw DecodingError.invalidData
+                        }
                         unboxedFields[field] = id
-                        
                     }
-                    
-                    print ("field: \(field) required: \(required), value: \(unboxedFields[field] ?? "not set")" )
-                    
                     if required && unboxedFields[field] == nil {
-                        
-                        print("debug: field \(field) is required and not set so should throw here")
                         throw DecodingError.requiredKeyMissing(key)
                     }
-                    
                 } catch {
                     throw DecodingError.typeMismatch(String.self)
                 }

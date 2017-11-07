@@ -24,12 +24,21 @@ public protocol Writeable {
 
 public typealias Encodable = Swift.Encodable & Writeable
 
-public enum DecodingError: Error {
+public protocol ResultError {
+    func underlyingError() -> Error
+    func errorMessage() -> String
+}
+
+public enum DecodingError: Error, ResultError {
     case typeMismatch(Any.Type)
     case requiredKeyMissing(CodingKey)
     case fieldFormatError
     case invalidData
     case missingRequiredFields([String])
+    
+    public func underlyingError() -> Error {
+        return self
+    }
     
     public func errorMessage() -> String {
         switch self {
@@ -47,9 +56,28 @@ public enum DecodingError: Error {
     }
 }
 
+extension Swift.DecodingError: ResultError {
+    public func underlyingError() -> Error {
+        return self
+    }
+    
+    public func errorMessage() -> String {
+        switch self {
+        case .typeMismatch(let type):
+            return ("wrong type: \(String(describing: type))")
+        case .valueNotFound(_, _):
+            return ("value not found")
+        case .keyNotFound(_, _):
+            return ("key not found")
+        case .dataCorrupted(_):
+            return ("data corrupted")
+        }
+    }
+}
+
 public enum Result<T> {
     case success(T)
-    case error(DecodingError)
+    case error(ResultError)
 }
 
 public struct SysData {
