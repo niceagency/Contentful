@@ -24,60 +24,29 @@ public protocol Writeable {
 
 public typealias Encodable = Swift.Encodable & Writeable
 
-public protocol ResultError {
-    func underlyingError() -> Error
-    func errorMessage() -> String
-}
-
-public enum DecodingError: Error, ResultError {
-    case typeMismatch(Any.Type)
-    case requiredKeyMissing(CodingKey)
-    case fieldFormatError
-    case invalidData
+public enum DecodingError: Error {
+    case typeMismatch(String, UnboxedType)
+    case requiredKeyMissing(String)
+    case fieldFormatError(String)
     case missingRequiredFields([String])
-    
-    public func underlyingError() -> Error {
-        return self
-    }
     
     public func errorMessage() -> String {
         switch self {
         case .typeMismatch(let type):
             return ("wrong type: \(String(describing: type))")
-        case .requiredKeyMissing(let key):
-            return ("missing required field \(key.stringValue)")
+        case .requiredKeyMissing(let string):
+            return ("missing required field \(string)")
         case .fieldFormatError:
             return ("field format error")
-        case .invalidData:
-            return ("data corrupt")
         case .missingRequiredFields(let fields ):
              return ("missing required fields \(fields)")
         }
     }
 }
 
-extension Swift.DecodingError: ResultError {
-    public func underlyingError() -> Error {
-        return self
-    }
-    
-    public func errorMessage() -> String {
-        switch self {
-        case .typeMismatch(let type):
-            return ("wrong type: \(String(describing: type))")
-        case .valueNotFound(_, _):
-            return ("value not found")
-        case .keyNotFound(_, _):
-            return ("key not found")
-        case .dataCorrupted(_):
-            return ("data corrupted")
-        }
-    }
-}
-
 public enum Result<T> {
     case success(T)
-    case error(ResultError)
+    case error(Swift.DecodingError)
 }
 
 public struct SysData {
@@ -86,7 +55,8 @@ public struct SysData {
 }
 
 public struct PagedResult<T> {
-    public let results: [T]
+    public let validItems: [T]
+    public let failedItems: [(Int, DecodingError)]
     public let page: Page
 }
 

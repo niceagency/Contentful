@@ -32,7 +32,7 @@ public struct PageRequest {
 
 public struct PageUnboxing {
     
-    public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T?)) -> Result<PagedResult<T>>  {
+    public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<PagedResult<T>>  {
         let decoder = JSONDecoder()
         
         decoder.userInfo = [CodingUserInfoKey(rawValue: "fieldUnboxer")!: fieldUnboxer, CodingUserInfoKey(rawValue: "creator")!: creator]
@@ -44,10 +44,11 @@ public struct PageUnboxing {
         do {
             let response = try decoder.decode(Response<T>.self, from: data)
             let entries = response.entries
+            let failures = response.failures
             let page = Page(itemsPerPage: response.limit, currentPage: response.skip/response.limit, totalItemsAvailable: response.total)
-            return .success(PagedResult(results: entries, page: page))
+            return .success(PagedResult(validItems: entries, failedItems: failures, page: page))
         } catch {
-            return .error(error as! ResultError)
+            return .error(error as! Swift.DecodingError)
         }
     }
 }
@@ -91,11 +92,9 @@ private struct Response<T> : Decodable {
     let total: Int
     let skip: Int
     let limit: Int
-    private let unboxables: [Unboxable<T>]
     
-    var entries: [T] {
-        return unboxables.flatMap({ $0.object })
-    }
+    let entries: [T]
+    let failures: [(Int, DecodingError)]
     
     enum CodingKeys: String, CodingKey {
         case total
@@ -109,7 +108,23 @@ private struct Response<T> : Decodable {
         total = try container.decode(Int.self, forKey: .total)
         skip = try container.decode(Int.self, forKey: .skip)
         limit = try container.decode(Int.self, forKey: .limit)
-        unboxables = try container.decode([Unboxable<T>].self, forKey: .entries)
+        
+        let unboxables: [Unboxable<T>] = try container.decode([Unboxable<T>].self, forKey: .entries)
+        
+        var entries: [T] = []
+        var failures: [(Int, DecodingError)] = []
+        
+        for i in 0..<unboxables.count {
+            switch unboxables[i].item {
+            case .success(let entry):
+                entries.append(entry)
+            case .error(let error):
+                failures.append( (i,error))
+            }
+        }
+        
+        self.entries = entries
+        self.failures = failures
     }
 }
 
@@ -138,20 +153,25 @@ private struct GenericCodingKeys: CodingKey {
 //MARK: Decoding container
 
 private struct Unboxable<T>: Decodable {
-    let object: T?
+    indirect enum ItemResult {
+        case success(T)
+        case error(DecodingError)
+    }
+    
+    let item: ItemResult
     
     init(from decoder: Decoder) throws {
-        let unboxing = decoder.userInfo[CodingUserInfoKey(rawValue: "fieldUnboxer")!] as! (() -> FieldMapping )
-        let creator = decoder.userInfo[CodingUserInfoKey(rawValue: "creator")!] as! ((UnboxedFields) -> T?)
+        let unboxing = decoder.userInfo[CodingUserInfoKey(rawValue: "fieldUnboxer")!] as! (() -> FieldMapping)
+        let creator = decoder.userInfo[CodingUserInfoKey(rawValue: "creator")!] as! ((UnboxedFields) -> T)
+        
         do {
             let fields = try Unboxable.unboxableFields(fromDecoder: decoder, withUnboxing: unboxing)
-            object = creator(fields)
-        } catch DecodingError.missingRequiredFields(let fields) {
-            print ("failed to initialize object  - missing fields \(fields)")
-            object = nil
+            item = .success(creator(fields))
+        } catch {
+            item = .error(error as! DecodingError)
         }
     }
-
+    
     static func unboxableFields(fromDecoder decoder: Decoder, withUnboxing unboxing: (() -> FieldMapping)) throws -> UnboxedFields {
         
         func getValueFromDict<T>(dict: [String:T], locale: Locale?) -> T? {
@@ -177,7 +197,7 @@ private struct Unboxable<T>: Decodable {
         let requiredFields = fieldMapping.filter{ $0.value.1 == true }
         let requiredKeys  = Set(requiredFields.keys)
         let fieldsReturned = Set(fields.allKeys.map { $0.stringValue })
-  
+        
         guard requiredKeys.isSubset(of: fieldsReturned) else {
             throw DecodingError.missingRequiredFields(Array(requiredKeys.subtracting(fieldsReturned)))
         }
@@ -186,43 +206,52 @@ private struct Unboxable<T>: Decodable {
             let field = key.stringValue
             
             if let (type, required) = fieldMapping[field] {
-                do {
-                    switch type {
-                    case .string:
-                        let stringDict = try fields.decode(StringDict.self, forKey: key)
-                        unboxedFields[field] = getValueFromDict(dict: stringDict, locale: locale)
-                    case .int:
-                        let intDict = try fields.decode(IntDict.self, forKey: key)
-                        unboxedFields[field] = getValueFromDict(dict: intDict, locale: locale)
-                    case .bool:
-                        let boolDict = try fields.decode(BoolDict.self, forKey: key)
-                        unboxedFields[field] = getValueFromDict(dict: boolDict, locale: locale)
-                    case .decimal:
-                        let doubleDict = try fields.decode(DoubleDict.self, forKey: key)
-                        unboxedFields[field] = getValueFromDict(dict: doubleDict, locale: locale)
-                    case .date:
-                        let stringDict = try fields.decode(StringDict.self, forKey: key)
-                        let dateString = getValueFromDict(dict: stringDict, locale: locale)
-                        let formatter = ISO8601DateFormatter()
-                        guard let ds = dateString, let date = formatter.date(from: ds) else { throw DecodingError.fieldFormatError }
-                        unboxedFields[field] = date
-                    case .reference:
-                        let refDict = try fields.decode(RefDict.self, forKey: key)
-                        guard let sysDict  = getValueFromDict(dict: refDict, locale: locale),
-                            let idDict = sysDict["sys"],
-                            let id = idDict["id"] else {
-                                throw DecodingError.invalidData
+                switch type {
+                case .string:
+                    let stringDict = try fields.decode(StringDict.self, forKey: key)
+                    unboxedFields[field] = getValueFromDict(dict: stringDict, locale: locale)
+                case .int:
+                    let intDict = try fields.decode(IntDict.self, forKey: key)
+                    unboxedFields[field] = getValueFromDict(dict: intDict, locale: locale)
+                case .bool:
+                    let boolDict = try fields.decode(BoolDict.self, forKey: key)
+                    unboxedFields[field] = getValueFromDict(dict: boolDict, locale: locale)
+                case .decimal:
+                    let doubleDict = try fields.decode(DoubleDict.self, forKey: key)
+                    unboxedFields[field] = getValueFromDict(dict: doubleDict, locale: locale)
+                case .date:
+                    let stringDict = try fields.decode(StringDict.self, forKey: key)
+                    let dateString = getValueFromDict(dict: stringDict, locale: locale)
+                    let formatter = ISO8601DateFormatter()
+                    formatter.formatOptions = .withFullDate
+                    
+                    if let ds = dateString {
+                        if let date = formatter.date(from: ds) {
+                            unboxedFields[field] = date
+                        } else {
+                            throw DecodingError.fieldFormatError(key.stringValue)
                         }
+                    }
+                    
+                case .reference:
+                    let refDict = try fields.decode(RefDict.self, forKey: key)
+                    
+                    if let sysDict  = getValueFromDict(dict: refDict, locale: locale) {
+                        guard let idDict = sysDict["sys"],
+                            let id = idDict["id"] else {
+                                throw DecodingError.typeMismatch(key.stringValue, .reference)
+                        }
+                        
                         unboxedFields[field] = id
                     }
-                    if required && unboxedFields[field] == nil {
-                        throw DecodingError.requiredKeyMissing(key)
-                    }
-                } catch {
-                    throw DecodingError.typeMismatch(String.self)
+                }
+                
+                if required && unboxedFields[field] == nil {
+                    throw DecodingError.requiredKeyMissing(key.stringValue)
                 }
             }
         }
+        
         return unboxedFields
     }
 }
