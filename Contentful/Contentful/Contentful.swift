@@ -108,7 +108,7 @@ public struct ItemUnboxing {
 }
 //MARK: JSON decoding keys
 
-private struct Response<T> : Decodable {
+private struct Response<T> : Swift.Decodable {
     
     let total: Int
     let skip: Int
@@ -173,7 +173,7 @@ private struct GenericCodingKeys: CodingKey {
 
 //MARK: Decoding container
 
-private struct Unboxable<T>: Decodable {
+private struct Unboxable<T>: Swift.Decodable {
 
     let item: ItemResult<T>
     
