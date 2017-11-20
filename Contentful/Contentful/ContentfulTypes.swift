@@ -23,7 +23,7 @@ public protocol Writeable {
 }
 
 public typealias Encodable = Swift.Encodable & Writeable
-public typealias Decodable = Swift.Decodable & Readable
+
 
 public enum DecodingError: Error {
     case typeMismatch(String, UnboxedType)
