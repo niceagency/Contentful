@@ -60,6 +60,11 @@ public struct PagedResult<T> {
     public let page: Page
 }
 
+public enum ItemResult<T> {
+    case success(T)
+    case error (DecodingError)
+}
+
 public enum UnboxedType {
     case string
     case int

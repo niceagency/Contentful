@@ -32,7 +32,7 @@ public struct PageRequest {
 
 public struct PageUnboxing {
     
-    public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<PagedResult<T>>  {
+    public static func unboxResponse<T: Decodable>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<PagedResult<T>>  {
         let decoder = JSONDecoder()
         
         decoder.userInfo = [CodingUserInfoKey(rawValue: "fieldUnboxer")!: fieldUnboxer, CodingUserInfoKey(rawValue: "creator")!: creator]
@@ -85,6 +85,27 @@ public struct ObjectEncoding {
     }
 }
 
+
+public struct ItemUnboxing {
+    
+    public static func decode<T: Decodable>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<ItemResult<T>> {
+        let decoder = JSONDecoder()
+        
+        decoder.userInfo = [CodingUserInfoKey(rawValue: "fieldUnboxer")!: fieldUnboxer, CodingUserInfoKey(rawValue: "creator")!: creator]
+        
+        if let locale = locale {
+            decoder.userInfo.updateValue(locale, forKey: CodingUserInfoKey(rawValue: "locale")!)
+        }
+        
+        do {
+            let unboxed  = try decoder.decode(Unboxable<T>.self, from: data)
+            return Result.success(unboxed.item)
+          
+        } catch {
+            return Result.error(error as! Swift.DecodingError)
+        }
+    }
+}
 //MARK: JSON decoding keys
 
 private struct Response<T> : Decodable {
@@ -153,12 +174,8 @@ private struct GenericCodingKeys: CodingKey {
 //MARK: Decoding container
 
 private struct Unboxable<T>: Decodable {
-    indirect enum ItemResult {
-        case success(T)
-        case error(DecodingError)
-    }
-    
-    let item: ItemResult
+
+    let item: ItemResult<T>
     
     init(from decoder: Decoder) throws {
         let unboxing = decoder.userInfo[CodingUserInfoKey(rawValue: "fieldUnboxer")!] as! (() -> FieldMapping)
