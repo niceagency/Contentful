@@ -24,6 +24,7 @@ public protocol Writeable {
 
 public typealias Encodable = Swift.Encodable & Writeable
 
+
 public enum DecodingError: Error {
     case typeMismatch(String, UnboxedType)
     case requiredKeyMissing(String)

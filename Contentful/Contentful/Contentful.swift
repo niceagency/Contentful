@@ -32,7 +32,7 @@ public struct PageRequest {
 
 public struct PageUnboxing {
     
-    public static func unboxResponse<T: Decodable>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<PagedResult<T>>  {
+    public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<PagedResult<T>>  {
         let decoder = JSONDecoder()
         
         decoder.userInfo = [CodingUserInfoKey(rawValue: "fieldUnboxer")!: fieldUnboxer, CodingUserInfoKey(rawValue: "creator")!: creator]
@@ -88,7 +88,7 @@ public struct ObjectEncoding {
 
 public struct ItemUnboxing {
     
-    public static func decode<T: Decodable>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<ItemResult<T>> {
+    public static func unbox <T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<ItemResult<T>> {
         let decoder = JSONDecoder()
         
         decoder.userInfo = [CodingUserInfoKey(rawValue: "fieldUnboxer")!: fieldUnboxer, CodingUserInfoKey(rawValue: "creator")!: creator]
@@ -108,7 +108,7 @@ public struct ItemUnboxing {
 }
 //MARK: JSON decoding keys
 
-private struct Response<T> : Decodable {
+private struct Response<T> : Swift.Decodable {
     
     let total: Int
     let skip: Int
@@ -173,7 +173,7 @@ private struct GenericCodingKeys: CodingKey {
 
 //MARK: Decoding container
 
-private struct Unboxable<T>: Decodable {
+private struct Unboxable<T>: Swift.Decodable {
 
     let item: ItemResult<T>
     
