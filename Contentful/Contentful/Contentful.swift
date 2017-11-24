@@ -88,11 +88,11 @@ public struct ObjectEncoding {
 
 public struct Publishing {
     
-    public static func preparePublishRequestbyEntry <T: Writeable> (forEntry entry: T, toSpace spaceId: String ) -> String {
+    public static func preparePublishRequest<T: Writeable> (forEntry entry: T, toSpace spaceId: String ) -> String {
         return  "/spaces/\(spaceId)/entries/\(entry.contentful_id)/published"
     }
     
-    public static func preparePublishRequestbyID (forEntryID entryID: String, toSpace spaceId: String ) -> String {
+    public static func preparePublishRequest (forEntryID entryID: String, toSpace spaceId: String ) -> String {
         return  "/spaces/\(spaceId)/entries/\(entryID)/published"
     }
 }
