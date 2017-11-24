@@ -103,7 +103,7 @@ public struct Publishing {
 
 public struct Writing {
     
-    public static func prepareWriteRequest<T: Encodable> (forEntry entry: T, localeCode: LocaleCode, toSpace spaceId: String ) -> (data: Data, endpoint:String, headers:  [(String,String)])? {
+    public static func prepareWriteRequest<T: Encodable> (forEntry entry: T, localeCode: LocaleCode, toSpace spaceId: String ) -> WriteRequest? {
         
         let endpoint = "/spaces/\(spaceId)/entries/\(entry.contentful_id)"
         let headers =  [("X-Contentful-Version","\(entry.contentful_version)"),("Content-Type","application/vnd.contentful.management.v1+json") ]

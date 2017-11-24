@@ -10,6 +10,7 @@ import Foundation
 
 public typealias UnboxedFields = [String:Any]
 public typealias FieldMapping = [String:(UnboxedType,Bool)]
+public typealias WriteRequest  = (data: Data, endpoint: String, headers:  [(String,String)])
 
 public protocol Readable {
     static func contentfulEntryType() -> String
