@@ -88,16 +88,16 @@ public struct ObjectEncoding {
 
 public struct Publishing {
     
-    public static func preparePublishRequest<T: Writeable> (forEntry entry: T, toSpace spaceId: String ) -> (endpoint:String, header:  (String,String))  {
+    public static func preparePublishRequest<T: Writeable> (forEntry entry: T, toSpace spaceId: String ) -> (endpoint:String, headers:  [(String,String)])  {
         let endpoint =   "/spaces/\(spaceId)/entries/\(entry.contentful_id)/published"
-        let header = ("X-Contentful-Version","\(entry.contentful_version)")
-        return (endpoint: endpoint, header: header)
+        let headers = [("X-Contentful-Version","\(entry.contentful_version)")]
+        return (endpoint: endpoint, headers: headers)
     }
     
-    public static func preparePublishRequest (forEntryID entryID: String, entryVersion version: String,  toSpace spaceId: String ) -> (endpoint:String, header:  (String,String)) {
+    public static func preparePublishRequest (forEntryID entryID: String, entryVersion version: String,  toSpace spaceId: String ) -> (endpoint:String, headers:  [(String,String)]) {
         let endpoint =  "/spaces/\(spaceId)/entries/\(entryID)/published"
-        let header = ("X-Contentful-Version","\(version)")
-        return (endpoint: endpoint, header: header)
+        let headers = [("X-Contentful-Version","\(version)")]
+        return (endpoint: endpoint, headers: headers)
     }
 }
 
