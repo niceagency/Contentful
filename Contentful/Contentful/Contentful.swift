@@ -101,6 +101,19 @@ public struct Publishing {
     }
 }
 
+public struct Writing {
+    
+    public static func prepareWriteRequest<T: Encodable> (forEntry entry: T, localeCode: LocaleCode, toSpace spaceId: String ) -> (data: Data, endpoint:String, headers:  [(String,String)])? {
+        
+        let endpoint = "/spaces/\(spaceId)/entries/\(entry.contentful_id)"
+        let headers =  [("X-Contentful-Version","\(entry.contentful_version)"),("Content-Type","application/vnd.contentful.management.v1+json") ]
+        
+        guard let data = ObjectEncoding.encode(object: entry, locale: localeCode) else { return nil }
+        
+        return (data: data.data, endpoint: endpoint, headers: headers)
+    }
+}
+
 public struct ItemUnboxing {
     
     public static func unbox <T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<ItemResult<T>> {
