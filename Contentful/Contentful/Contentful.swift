@@ -30,6 +30,7 @@ public struct PageRequest {
     }
 }
 
+
 public struct PageUnboxing {
     
     public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<PagedResult<T>>  {
@@ -85,6 +86,16 @@ public struct ObjectEncoding {
     }
 }
 
+public struct Publishing {
+    
+    public static func preparePublishRequest<T: Writeable> (forEntry entry: T, toSpace spaceId: String ) -> String {
+        return  "/spaces/\(spaceId)/entries/\(entry.contentful_id)/published"
+    }
+    
+    public static func preparePublishRequest (forEntryID entryID: String, toSpace spaceId: String ) -> String {
+        return  "/spaces/\(spaceId)/entries/\(entryID)/published"
+    }
+}
 
 public struct ItemUnboxing {
     
@@ -106,6 +117,7 @@ public struct ItemUnboxing {
         }
     }
 }
+
 //MARK: JSON decoding keys
 
 private struct Response<T> : Swift.Decodable {
