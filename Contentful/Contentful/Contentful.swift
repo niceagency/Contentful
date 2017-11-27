@@ -30,6 +30,7 @@ public struct PageRequest {
     }
 }
 
+
 public struct PageUnboxing {
     
     public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<PagedResult<T>>  {
@@ -85,6 +86,33 @@ public struct ObjectEncoding {
     }
 }
 
+public struct Publishing {
+    
+    public static func preparePublishRequest<T: Writeable> (forEntry entry: T, toSpace spaceId: String ) -> (endpoint:String, headers:  [(String,String)])  {
+        let endpoint =   "/spaces/\(spaceId)/entries/\(entry.contentful_id)/published"
+        let headers = [("X-Contentful-Version","\(entry.contentful_version)")]
+        return (endpoint: endpoint, headers: headers)
+    }
+    
+    public static func preparePublishRequest (forEntryID entryID: String, entryVersion version: String,  toSpace spaceId: String ) -> (endpoint:String, headers:  [(String,String)]) {
+        let endpoint =  "/spaces/\(spaceId)/entries/\(entryID)/published"
+        let headers = [("X-Contentful-Version","\(version)")]
+        return (endpoint: endpoint, headers: headers)
+    }
+}
+
+public struct Writing {
+    
+    public static func prepareWriteRequest<T: Encodable> (forEntry entry: T, localeCode: LocaleCode, toSpace spaceId: String ) -> WriteRequest? {
+        
+        let endpoint = "/spaces/\(spaceId)/entries/\(entry.contentful_id)"
+        let headers =  [("X-Contentful-Version","\(entry.contentful_version)"),("Content-Type","application/vnd.contentful.management.v1+json") ]
+        
+        guard let data = ObjectEncoding.encode(object: entry, locale: localeCode) else { return nil }
+        
+        return (data: data.data, endpoint: endpoint, headers: headers)
+    }
+}
 
 public struct ItemUnboxing {
     
@@ -106,6 +134,7 @@ public struct ItemUnboxing {
         }
     }
 }
+
 //MARK: JSON decoding keys
 
 private struct Response<T> : Swift.Decodable {
