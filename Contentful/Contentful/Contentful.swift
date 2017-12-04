@@ -8,11 +8,11 @@
 
 import Foundation
 
-private typealias StringDict = [String:String]
-private typealias IntDict = [String:Int]
-private typealias DoubleDict = [String:Double]
-private typealias BoolDict = [String:Bool]
-private typealias RefDict = [String: [String:StringDict]]
+private typealias StringDict = [String:String?]
+private typealias IntDict = [String:Int?]
+private typealias DoubleDict = [String:Double?]
+private typealias BoolDict = [String:Bool?]
+private typealias RefDict = [String: [String:StringDict]?]
 
 
 public struct PageRequest {
@@ -271,8 +271,8 @@ private struct Unboxable<T>: Swift.Decodable {
                     let formatter = ISO8601DateFormatter()
                     formatter.formatOptions = .withFullDate
                     
-                    if let ds = dateString {
-                        if let date = formatter.date(from: ds) {
+                    if let dateDictValue = dateString  {
+                        if let dateAsString = dateDictValue, let  date = formatter.date(from: dateAsString) {
                             unboxedFields[field] = date
                         } else {
                             throw DecodingError.fieldFormatError(key.stringValue)
@@ -283,7 +283,7 @@ private struct Unboxable<T>: Swift.Decodable {
                     let refDict = try fields.decode(RefDict.self, forKey: key)
                     
                     if let sysDict  = getValueFromDict(dict: refDict, locale: locale) {
-                        guard let idDict = sysDict["sys"],
+                        guard let unwrappedSysDict = sysDict, let idDict = unwrappedSysDict["sys"],
                             let id = idDict["id"] else {
                                 throw DecodingError.typeMismatch(key.stringValue, .reference)
                         }
@@ -291,13 +291,11 @@ private struct Unboxable<T>: Swift.Decodable {
                         unboxedFields[field] = id
                     }
                 }
-                
                 if required && unboxedFields[field] == nil {
                     throw DecodingError.requiredKeyMissing(key.stringValue)
                 }
             }
         }
-        
         return unboxedFields
     }
 }
