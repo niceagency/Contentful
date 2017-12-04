@@ -8,11 +8,11 @@
 
 import Foundation
 
-private typealias StringDict = [String:String]
-private typealias IntDict = [String:Int]
-private typealias DoubleDict = [String:Double]
-private typealias BoolDict = [String:Bool]
-private typealias RefDict = [String: [String:StringDict]]
+private typealias StringDict = [String:String?]
+private typealias IntDict = [String:Int?]
+private typealias DoubleDict = [String:Double?]
+private typealias BoolDict = [String:Bool?]
+private typealias RefDict = [String: [String:StringDict]?]
 
 
 public struct PageRequest {
@@ -220,12 +220,20 @@ private struct Unboxable<T>: Swift.Decodable {
     
     static func unboxableFields(fromDecoder decoder: Decoder, withUnboxing unboxing: (() -> FieldMapping)) throws -> UnboxedFields {
         
-        func getValueFromDict<T>(dict: [String:T], locale: Locale?) -> T? {
+        func getValue<T>(fromDictionary dict: [String:T?], forLocale locale: Locale?) -> T? {
             if let locale = locale {
-                return dict[locale.favouredLocale.rawValue] ?? dict[locale.fallbackLocale.rawValue]
-            } else {
-                return dict[dict.keys.first!]
+                for testKey in [locale.favouredLocale.rawValue, locale.fallbackLocale.rawValue] {
+                    if let value = dict[testKey] {
+                        return value
+                    }
+                }
+                
+                return nil
+                
+            } else if let key = dict.keys.first {
+                return dict[key]!
             }
+            return nil
         }
         
         var unboxedFields: UnboxedFields = [:]
@@ -255,19 +263,19 @@ private struct Unboxable<T>: Swift.Decodable {
                 switch type {
                 case .string:
                     let stringDict = try fields.decode(StringDict.self, forKey: key)
-                    unboxedFields[field] = getValueFromDict(dict: stringDict, locale: locale)
+                    unboxedFields[field] = getValue(fromDictionary: stringDict, forLocale: locale)
                 case .int:
                     let intDict = try fields.decode(IntDict.self, forKey: key)
-                    unboxedFields[field] = getValueFromDict(dict: intDict, locale: locale)
+                    unboxedFields[field] = getValue(fromDictionary: intDict, forLocale : locale)
                 case .bool:
                     let boolDict = try fields.decode(BoolDict.self, forKey: key)
-                    unboxedFields[field] = getValueFromDict(dict: boolDict, locale: locale)
+                    unboxedFields[field] = getValue(fromDictionary : boolDict, forLocale : locale)
                 case .decimal:
                     let doubleDict = try fields.decode(DoubleDict.self, forKey: key)
-                    unboxedFields[field] = getValueFromDict(dict: doubleDict, locale: locale)
+                    unboxedFields[field] = getValue(fromDictionary: doubleDict, forLocale : locale)
                 case .date:
                     let stringDict = try fields.decode(StringDict.self, forKey: key)
-                    let dateString = getValueFromDict(dict: stringDict, locale: locale)
+                    let dateString = getValue(fromDictionary: stringDict, forLocale : locale)
                     let formatter = ISO8601DateFormatter()
                     formatter.formatOptions = .withFullDate
                     
@@ -282,7 +290,7 @@ private struct Unboxable<T>: Swift.Decodable {
                 case .reference:
                     let refDict = try fields.decode(RefDict.self, forKey: key)
                     
-                    if let sysDict  = getValueFromDict(dict: refDict, locale: locale) {
+                    if let sysDict  = getValue(fromDictionary: refDict, forLocale: locale) {
                         guard let idDict = sysDict["sys"],
                             let id = idDict["id"] else {
                                 throw DecodingError.typeMismatch(key.stringValue, .reference)
@@ -297,7 +305,6 @@ private struct Unboxable<T>: Swift.Decodable {
                 }
             }
         }
-        
         return unboxedFields
     }
 }
