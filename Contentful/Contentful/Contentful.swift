@@ -101,6 +101,16 @@ public struct Publishing {
     }
 }
 
+public struct Creating {
+    
+    public static func prepareCreateEntryRequest<T: Readable & Encodable > ( forEntry entry: T, localeCode: LocaleCode, toSpace spaceId: String) -> WriteRequest?  {
+        let endpoint = "/spaces/\(spaceId)/entries"
+        let headers = [("X-Contentful-Content-Type","\(T.contentfulEntryType())")]
+        guard let data = ObjectEncoding.encode(object: entry, locale: localeCode) else { return nil }
+        return (data: data.data, endpoint: endpoint, headers: headers)
+    }
+}
+
 public struct Writing {
     
     public static func prepareWriteRequest<T: Encodable> (forEntry entry: T, localeCode: LocaleCode, toSpace spaceId: String ) -> WriteRequest? {
