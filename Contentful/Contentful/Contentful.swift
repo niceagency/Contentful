@@ -107,7 +107,7 @@ public struct Creating {
         let endpoint = "/spaces/\(spaceId)/entries"
         let headers = [("X-Contentful-Content-Type","\(T.contentfulEntryType())")]
         guard let data = ObjectEncoding.encode(object: entry, locale: localeCode) else { return nil }
-        return (data: data.data, endpoint: endpoint, headers: headers)
+        return (data: data.data, endpoint: endpoint, headers: headers, method: .post)
     }
 }
 
@@ -120,7 +120,7 @@ public struct Writing {
         
         guard let data = ObjectEncoding.encode(object: entry, locale: localeCode) else { return nil }
         
-        return (data: data.data, endpoint: endpoint, headers: headers)
+        return (data: data.data, endpoint: endpoint, headers: headers, method: .put)
     }
 }
 
