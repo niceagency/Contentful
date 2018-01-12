@@ -25,12 +25,40 @@ public protocol Writeable {
 
 public typealias Encodable = Swift.Encodable & Writeable
 
-
 public enum HttpMethod {
     case put
     case post
 }
 
+public enum ReferenceType : String {
+    case entry = "Entry"
+}
+
+public struct Reference : Codable {
+    
+    private struct Sys: Codable {
+        let type: String = "Link"
+        let linkType : String
+        let id : String
+    }
+    private let sys: Sys
+    
+    public var id: String {
+        return sys.id
+    }
+    
+    public func getObjectWithId<T: Writeable> (fromCandidates candidates: [T]) -> T? {
+        return candidates.first(where: { $0.contentful_id == self.id })
+    }
+    
+    public init (forObject object: Writeable, type: ReferenceType = .entry ) {
+        self.sys = Sys(linkType: type.rawValue, id: object.contentful_id)
+    }
+    
+    init (withId id: String, type: String) {
+        self.sys = Sys(linkType: type, id: id )
+    }
+}
 
 public enum DecodingError: Error {
     case typeMismatch(String, UnboxedType)
@@ -47,7 +75,7 @@ public enum DecodingError: Error {
         case .fieldFormatError:
             return ("field format error")
         case .missingRequiredFields(let fields ):
-             return ("missing required fields \(fields)")
+            return ("missing required fields \(fields)")
         }
     }
 }
@@ -79,5 +107,6 @@ public enum UnboxedType {
     case date
     case decimal
     case bool
-    case reference
+    case oneToOneRef
+    case oneToManyRef
 }

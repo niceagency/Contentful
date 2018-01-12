@@ -12,8 +12,8 @@ private typealias StringDict = [String:String?]
 private typealias IntDict = [String:Int?]
 private typealias DoubleDict = [String:Double?]
 private typealias BoolDict = [String:Bool?]
-private typealias RefDict = [String: [String:StringDict]?]
-
+private typealias OneRefDict = [String: [String:StringDict]?]
+private typealias ManyRefDict = [String:  [[String:StringDict]]? ]
 
 public struct PageRequest {
     
@@ -29,7 +29,6 @@ public struct PageRequest {
         return (endpoint, queries)
     }
 }
-
 
 public struct PageUnboxing {
     
@@ -107,6 +106,7 @@ public struct Creating {
         let endpoint = "/spaces/\(spaceId)/entries"
         let headers = [("X-Contentful-Content-Type","\(T.contentfulEntryType())")]
         guard let data = ObjectEncoding.encode(object: entry, locale: localeCode) else { return nil }
+        
         return (data: data.data, endpoint: endpoint, headers: headers, method: .post)
     }
 }
@@ -114,7 +114,6 @@ public struct Creating {
 public struct Writing {
     
     public static func prepareWriteRequest<T: Encodable> (forEntry entry: T, localeCode: LocaleCode, toSpace spaceId: String ) -> WriteRequest? {
-        
         let endpoint = "/spaces/\(spaceId)/entries/\(entry.contentful_id)"
         let headers =  [("X-Contentful-Version","\(entry.contentful_version)"),("Content-Type","application/vnd.contentful.management.v1+json") ]
         
@@ -138,7 +137,7 @@ public struct ItemUnboxing {
         do {
             let unboxed  = try decoder.decode(Unboxable<T>.self, from: data)
             return Result.success(unboxed.item)
-          
+            
         } catch {
             return Result.error(error as! Swift.DecodingError)
         }
@@ -213,7 +212,7 @@ private struct GenericCodingKeys: CodingKey {
 //MARK: Decoding container
 
 private struct Unboxable<T>: Swift.Decodable {
-
+    
     let item: ItemResult<T>
     
     init(from decoder: Decoder) throws {
@@ -297,16 +296,32 @@ private struct Unboxable<T>: Swift.Decodable {
                         }
                     }
                     
-                case .reference:
-                    let refDict = try fields.decode(RefDict.self, forKey: key)
+                case .oneToOneRef:
+                    let oneRefDict = try fields.decode(OneRefDict.self, forKey: key)
                     
-                    if let sysDict  = getValue(fromDictionary: refDict, forLocale: locale) {
+                    if let sysDict  = getValue(fromDictionary: oneRefDict, forLocale: locale) {
                         guard let idDict = sysDict["sys"],
-                            let id = idDict["id"] else {
-                                throw DecodingError.typeMismatch(key.stringValue, .reference)
+                            let id = idDict["id"], let unwrappedId = id,  let type = idDict["linkType"], let unwrappedType = type else {
+                                throw DecodingError.typeMismatch(key.stringValue, .oneToOneRef)
                         }
                         
-                        unboxedFields[field] = id
+                        unboxedFields[field] = Reference(withId: unwrappedId, type: unwrappedType)
+                    }
+                    
+                case .oneToManyRef:
+                    let manyRefDict = try fields.decode(ManyRefDict.self, forKey: key)
+                    
+                    if let sysDicts = getValue(fromDictionary: manyRefDict, forLocale: locale) {
+                        let idDicts = sysDicts.flatMap {  $0["sys"]  }
+                        
+                        let ids  = idDicts.flatMap { $0["id"]  }.flatMap {$0}
+                        let types = idDicts.flatMap { $0["linkType"]}.flatMap{$0}
+                        
+                        guard ids.count == types.count else { throw DecodingError.typeMismatch(key.stringValue, .oneToManyRef) }
+                        
+                        let zipped = Array(zip(ids,types))
+                        let references = zipped.map { Reference(withId: $0.0, type: $0.1)}
+                        unboxedFields[field] = references
                     }
                 }
                 
@@ -315,6 +330,7 @@ private struct Unboxable<T>: Swift.Decodable {
                 }
             }
         }
+        
         return unboxedFields
     }
 }
