@@ -32,7 +32,7 @@ public struct PageRequest {
 
 public struct SingleEntryRequest {
     public static func prepareRequest(forEntryId entryId: String, fromSpace spaceId: String) -> String {
-        return "/spaces/\(spaceId)/entries\(entryId)"
+        return "/spaces/\(spaceId)/entries/\(entryId)"
     }
 }
 
