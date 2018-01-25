@@ -31,8 +31,18 @@ public struct PageRequest {
 }
 
 public struct SingleEntryRequest {
+    public static func prepareRequest<T:Writeable>(forEntry entry: T, fromSpace spaceId: String) -> String {
+        return "/spaces/\(spaceId)/entries/\(entry.contentful_id)"
+    }
+    
     public static func prepareRequest(forEntryId entryId: String, fromSpace spaceId: String) -> String {
         return "/spaces/\(spaceId)/entries/\(entryId)"
+    }
+    
+    public static func prepareDeletionRequest<T: Writeable>(forEntry entry: T, fromSpace spaceId: String) -> DeletionRequest {
+        let endpoint = "/spaces/\(spaceId)/entries/\(entry.contentful_id)"
+        let headers = [("X-Contentful-Version","\(entry.contentful_version)")]
+        return ( endpoint: endpoint, headers: headers, method: .delete)
     }
 }
 
