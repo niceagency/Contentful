@@ -10,7 +10,7 @@ import Foundation
 
 public typealias UnboxedFields = [String:Any?]
 public typealias FieldMapping = [String:(UnboxedType,Bool)]
-public typealias WriteRequest  = (data: Data, endpoint: String, headers:  [(String,String)], method: HttpMethod)
+public typealias WriteRequest  = (data: Data?, endpoint: String, headers:  [(String,String)], method: HttpMethod)
 
 public protocol Readable {
     static func contentfulEntryType() -> String
@@ -28,6 +28,7 @@ public typealias Encodable = Swift.Encodable & Writeable
 public enum HttpMethod {
     case put
     case post
+    case delete
 }
 
 public enum ReferenceType : String {
