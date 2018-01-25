@@ -30,6 +30,12 @@ public struct PageRequest {
     }
 }
 
+public struct SingleEntryRequest {
+    public static func prepareRequest(forEntryId entryId: String, fromSpace spaceId: String) -> String {
+        return "/spaces/\(spaceId)/entries/\(entryId)"
+    }
+}
+
 public struct PageUnboxing {
     
     public static func unboxResponse<T>(data: Data, locale: Locale?, with fieldUnboxer: @escaping (() -> (FieldMapping)), via creator: @escaping ((UnboxedFields) -> T)) -> Result<PagedResult<T>>  {
