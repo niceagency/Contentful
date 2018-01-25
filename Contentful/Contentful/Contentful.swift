@@ -39,10 +39,10 @@ public struct SingleEntryRequest {
         return "/spaces/\(spaceId)/entries/\(entryId)"
     }
     
-    public static func prepareDeletionRequest<T: Writeable>(forEntry entry: T, fromSpace spaceId: String) -> DeletionRequest {
+    public static func prepareDeletionRequest<T: Writeable>(forEntry entry: T, fromSpace spaceId: String) -> WriteRequest {
         let endpoint = "/spaces/\(spaceId)/entries/\(entry.contentful_id)"
         let headers = [("X-Contentful-Version","\(entry.contentful_version)")]
-        return ( endpoint: endpoint, headers: headers, method: .delete)
+        return ( data: nil ,endpoint: endpoint, headers: headers, method: .delete)
     }
 }
 
@@ -103,16 +103,28 @@ public struct ObjectEncoding {
 
 public struct Publishing {
     
-    public static func preparePublishRequest<T: Writeable> (forEntry entry: T, toSpace spaceId: String ) -> (endpoint:String, headers:  [(String,String)])  {
+    public static func preparePublishRequest<T: Writeable> (forEntry entry: T, toSpace spaceId: String ) -> WriteRequest {
         let endpoint =   "/spaces/\(spaceId)/entries/\(entry.contentful_id)/published"
         let headers = [("X-Contentful-Version","\(entry.contentful_version)")]
-        return (endpoint: endpoint, headers: headers)
+        return (data: nil, endpoint: endpoint, headers: headers, method: .put)
     }
     
-    public static func preparePublishRequest (forEntryID entryID: String, entryVersion version: String,  toSpace spaceId: String ) -> (endpoint:String, headers:  [(String,String)]) {
+    public static func preparePublishRequest (forEntryID entryID: String, entryVersion version: String,  toSpace spaceId: String ) -> WriteRequest {
         let endpoint =  "/spaces/\(spaceId)/entries/\(entryID)/published"
         let headers = [("X-Contentful-Version","\(version)")]
-        return (endpoint: endpoint, headers: headers)
+        return (data: nil, endpoint: endpoint, headers: headers, method: .put)
+    }
+    
+    public static func prepareUnpublishRequest<T: Writeable> (forEntry entry: T, toSpace spaceId: String ) -> WriteRequest {
+        let endpoint =   "/spaces/\(spaceId)/entries/\(entry.contentful_id)/published"
+        let headers = [("X-Contentful-Version","\(entry.contentful_version)")]
+        return (data: nil, endpoint: endpoint, headers: headers, method: .delete)
+    }
+    
+    public static func prepareUnpublishRequest (forEntryID entryID: String, entryVersion version: String,  toSpace spaceId: String ) -> WriteRequest {
+        let endpoint =  "/spaces/\(spaceId)/entries/\(entryID)/published"
+        let headers = [("X-Contentful-Version","\(version)")]
+        return (data: nil, endpoint: endpoint, headers: headers, method: .delete)
     }
 }
 

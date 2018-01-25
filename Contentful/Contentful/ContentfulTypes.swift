@@ -10,8 +10,8 @@ import Foundation
 
 public typealias UnboxedFields = [String:Any?]
 public typealias FieldMapping = [String:(UnboxedType,Bool)]
-public typealias WriteRequest  = (data: Data, endpoint: String, headers:  [(String,String)], method: HttpMethod)
-public typealias DeletionRequest = (endpoint: String, headers: [(String,String)], method: HttpMethod)
+public typealias WriteRequest  = (data: Data?, endpoint: String, headers:  [(String,String)], method: HttpMethod)
+
 public protocol Readable {
     static func contentfulEntryType() -> String
     static func unboxer() -> (FieldMapping)
